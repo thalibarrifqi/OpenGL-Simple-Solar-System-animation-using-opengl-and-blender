@@ -1,0 +1,320 @@
+#define GLEW_STATIC
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+#include <string>
+#include "Shader.h"
+#include "Camera.h"
+#include "Model.h"
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#define _USE_MATH_DEFINES
+#include <math.h>
+#include <vector>
+
+// Properties
+GLuint screenWidth = 800, screenHeight = 600;
+
+// Function prototypes
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
+void Do_Movement();
+
+// Camera
+Camera camera(glm::vec3(1.0f, 0.0f, 6.0f));
+bool keys[1024];
+GLfloat lastX = 400, lastY = 300;
+GLfloat deltaTime = 0.0f;
+GLfloat lastFrame = 0.0f;
+
+//global variabel
+glm::vec3 point = glm::vec3(0.0f, 0.0f, 0.0f);
+GLfloat SceneRotateY = 0.0f;
+GLfloat SceneRotateX = 0.0f;
+float PlanetSpeed = 0.1f;
+
+// The MAIN function, from here we start our application and run our Game loop
+int main()
+{
+	// Init GLFW
+	glfwInit();
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+	GLFWwindow* window = glfwCreateWindow(screenWidth, screenHeight, "LearnOpenGL", nullptr, nullptr); // Windowed
+	glfwMakeContextCurrent(window);
+
+	// Set the required callback functions
+	glfwSetKeyCallback(window, key_callback);
+		
+	// Initialize GLEW to setup the OpenGL Function pointers
+	glewExperimental = GL_TRUE;
+	glewInit();
+
+	// Define the viewport dimensions
+	glViewport(0, 0, screenWidth, screenHeight);
+
+	// Setup some OpenGL options
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_MULTISAMPLE);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	
+	// Setup and compile our shaders
+	Shader shader("shaders/planet/model_loading.vs", "shaders/planet/model_loading.fs");
+	Shader SimpleShader("shaders/simpleVS.vs", "shaders/simpleFS.fs");
+
+	// Load objek
+	Model venus("src/venus/planet.obj");
+	Model matahari("src/matahari/matahari.obj");
+	Model bumi("src/bumi/bumi.obj");
+	Model merkurius("src/merkurius/merkurius.obj");
+	Model mars("src/mars/mars.obj");
+	Model jupiter("src/jupiter/jupiter.obj");
+	Model saturnus("src/saturnus/saturnus.obj");
+	Model saturnus_ring("src/saturnus/saturnus_ring.obj");
+	Model uranus("src/uranus/uranus.obj");
+	Model neptunus("src/neptunus/neptunus.obj");
+
+	
+	// loop
+	while (!glfwWindowShouldClose(window))
+	{
+		// Set frame time
+		GLfloat currentFrame = glfwGetTime();
+		deltaTime = currentFrame - lastFrame;
+		lastFrame = currentFrame;
+
+		// Check and call events
+		glfwPollEvents();
+		Do_Movement();
+
+		// Clear the colorbuffer
+		glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		
+
+		// MATAHARI
+		shader.Use();   // <-- Don't forget this one!
+		// Transformation matrices
+		
+		glm::mat4 projection_matahari = glm::perspective(camera.Zoom, (float)screenWidth / (float)screenHeight, 0.1f, 100.0f);
+		glm::mat4 view_matahari = camera.GetViewMatrix();
+		glUniformMatrix4fv(glGetUniformLocation(shader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection_matahari));
+		glUniformMatrix4fv(glGetUniformLocation(shader.ID, "view"), 1, GL_FALSE, glm::value_ptr(view_matahari));
+		// Draw the loaded model
+		glm::mat4 model_matahari;
+		model_matahari = glm::translate(model_matahari, glm::vec3(-1.0f, 0.0f, 1.0f)); // Translate it down a bit so it's at the center of the scene
+		model_matahari = glm::rotate(model_matahari, (GLfloat)glfwGetTime()*10.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+		model_matahari = glm::scale(model_matahari, glm::vec3(0.4f, 0.4f, 0.4f));	// It's a bit too big for our scene, so scale it down
+		glUniformMatrix4fv(glGetUniformLocation(shader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model_matahari));
+		matahari.Draw(shader);
+		
+
+		// MERKURIUS
+		shader.Use();   // <-- Don't forget this one!
+		// Transformation matrices
+		double xx = sin(glfwGetTime() * PlanetSpeed) * 100.0f *2.0f *1.3f;
+		double zz = cos(glfwGetTime() * PlanetSpeed) * 100.0f *2.0f *1.3f;
+		glm::mat4 projection_merkurius = glm::perspective(camera.Zoom, (float)screenWidth / (float)screenHeight, 0.1f, 100.0f);
+		glm::mat4 view_merkurius = camera.GetViewMatrix();
+		glUniformMatrix4fv(glGetUniformLocation(shader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection_merkurius));
+		glUniformMatrix4fv(glGetUniformLocation(shader.ID, "view"), 1, GL_FALSE, glm::value_ptr(view_merkurius));
+		// Draw the loaded model
+		glm::mat4 model_merkurius;
+		model_merkurius = glm::translate(model_merkurius, glm::vec3(-0.4f, 0.0f, 1.0f)); // Translate it down a bit so it's at the center of the scene
+		model_merkurius = glm::rotate(model_merkurius, (GLfloat)glfwGetTime()*10.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+		model_merkurius = glm::scale(model_merkurius, glm::vec3(0.05f, 0.05f, 0.05f));	// It's a bit too big for our scene, so scale it down
+		glUniformMatrix4fv(glGetUniformLocation(shader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model_merkurius));
+		merkurius.Draw(shader);
+		
+
+		// VENUS
+		shader.Use();   // <-- Don't forget this one!
+		// Transformation matrices
+		glm::mat4 projection_venus = glm::perspective(camera.Zoom, (float)screenWidth / (float)screenHeight, 0.1f, 100.0f);
+		glm::mat4 view_venus = camera.GetViewMatrix();
+		glUniformMatrix4fv(glGetUniformLocation(shader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection_venus));
+		glUniformMatrix4fv(glGetUniformLocation(shader.ID, "view"), 1, GL_FALSE, glm::value_ptr(view_venus));
+		// Draw the loaded model
+		glm::mat4 model_venus;
+		model_venus = glm::translate(model_venus, glm::vec3(-0.15f, -0.04f, 1.0f)); // Translate it down a bit so it's at the center of the scene
+		model_venus = glm::rotate(model_venus, (GLfloat)glfwGetTime()*10.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+		model_venus = glm::scale(model_venus, glm::vec3(0.045f, 0.045f, 0.045f));	// It's a bit too big for our scene, so scale it down
+		glUniformMatrix4fv(glGetUniformLocation(shader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model_venus));
+		venus.Draw(shader);
+
+		
+		// BUMI
+		shader.Use();   // <-- Don't forget this one!
+		// Transformation matrices
+		glm::mat4 projection_bumi = glm::perspective(camera.Zoom, (float)screenWidth / (float)screenHeight, 0.1f, 100.0f);
+		glm::mat4 view_bumi = camera.GetViewMatrix();
+		glUniformMatrix4fv(glGetUniformLocation(shader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection_bumi));
+		glUniformMatrix4fv(glGetUniformLocation(shader.ID, "view"), 1, GL_FALSE, glm::value_ptr(view_bumi));
+		// Draw the loaded model
+		glm::mat4 model_bumi;
+		model_bumi = glm::translate(model_bumi, glm::vec3(0.2f, 0.0f, 1.0f)); // Translate it down a bit so it's at the center of the scene
+		model_bumi = glm::rotate(model_bumi, (GLfloat)glfwGetTime()*10.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+		model_bumi = glm::scale(model_bumi, glm::vec3(0.15f, 0.15f, 0.15f));	// It's a bit too big for our scene, so scale it down
+		glUniformMatrix4fv(glGetUniformLocation(shader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model_bumi));
+		bumi.Draw(shader);
+		
+
+		// MARS
+		shader.Use();   // <-- Don't forget this one!
+		// Transformation matrices
+		glm::mat4 projection_mars = glm::perspective(camera.Zoom, (float)screenWidth / (float)screenHeight, 0.1f, 100.0f);
+		glm::mat4 view_mars = camera.GetViewMatrix();
+		glUniformMatrix4fv(glGetUniformLocation(shader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection_mars));
+		glUniformMatrix4fv(glGetUniformLocation(shader.ID, "view"), 1, GL_FALSE, glm::value_ptr(view_mars));
+		// Draw the loaded model
+		glm::mat4 model_mars;
+		model_mars = glm::translate(model_mars, glm::vec3(0.5f, 0.0f, 1.0f)); // Translate it down a bit so it's at the center of the scene
+		model_mars = glm::rotate(model_mars, (GLfloat)glfwGetTime()*10.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+		model_mars = glm::scale(model_mars, glm::vec3(0.1f, 0.1f, 0.1f));	// It's a bit too big for our scene, so scale it down
+		glUniformMatrix4fv(glGetUniformLocation(shader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model_mars));
+		mars.Draw(shader);
+		
+
+		// JUPITER
+		shader.Use();   // <-- Don't forget this one!
+		// Transformation matrices
+		glm::mat4 projection_jupiter = glm::perspective(camera.Zoom, (float)screenWidth / (float)screenHeight, 0.1f, 100.0f);
+		glm::mat4 view_jupiter = camera.GetViewMatrix();
+		glUniformMatrix4fv(glGetUniformLocation(shader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection_jupiter));
+		glUniformMatrix4fv(glGetUniformLocation(shader.ID, "view"), 1, GL_FALSE, glm::value_ptr(view_jupiter));
+		// Draw the loaded model
+		glm::mat4 model_jupiter;
+		model_jupiter = glm::translate(model_jupiter, glm::vec3(0.95f, 0.0f, 1.0f)); // Translate it down a bit so it's at the center of the scene
+		model_jupiter = glm::rotate(model_jupiter, (GLfloat)glfwGetTime()*10.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+		model_jupiter = glm::scale(model_jupiter, glm::vec3(0.24f, 0.24f, 0.24f));	// It's a bit too big for our scene, so scale it down
+		glUniformMatrix4fv(glGetUniformLocation(shader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model_jupiter));
+		jupiter.Draw(shader);
+		
+
+		// SATURNUS
+		shader.Use();   // <-- Don't forget this one!
+		// Transformation matrices
+		glm::mat4 projection_saturnus = glm::perspective(camera.Zoom, (float)screenWidth / (float)screenHeight, 0.1f, 100.0f);
+		glm::mat4 view_saturnus = camera.GetViewMatrix();
+		glUniformMatrix4fv(glGetUniformLocation(shader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection_saturnus));
+		glUniformMatrix4fv(glGetUniformLocation(shader.ID, "view"), 1, GL_FALSE, glm::value_ptr(view_saturnus));
+		// Draw the loaded model
+		glm::mat4 model_saturnus;
+		model_saturnus = glm::translate(model_saturnus, glm::vec3(1.6f, 0.0f, 1.0f)); // Translate it down a bit so it's at the center of the scene
+		model_saturnus = glm::rotate(model_saturnus, (GLfloat)glfwGetTime()*10.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+		model_saturnus = glm::scale(model_saturnus, glm::vec3(0.18f, 0.18f, 0.18f));	// It's a bit too big for our scene, so scale it down
+		glUniformMatrix4fv(glGetUniformLocation(shader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model_saturnus));
+		saturnus.Draw(shader);
+		// SATURNUS_RING
+		shader.Use();   // <-- Don't forget this one!
+		// Transformation matrices
+		glm::mat4 projection_saturnus_ring = glm::perspective(camera.Zoom, (float)screenWidth / (float)screenHeight, 0.1f, 100.0f);
+		glm::mat4 view_saturnus_ring = camera.GetViewMatrix();
+		glUniformMatrix4fv(glGetUniformLocation(shader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection_saturnus_ring));
+		glUniformMatrix4fv(glGetUniformLocation(shader.ID, "view"), 1, GL_FALSE, glm::value_ptr(view_saturnus_ring));
+		// Draw the loaded model
+		glm::mat4 model_saturnus_ring;
+		model_saturnus_ring = glm::translate(model_saturnus_ring, glm::vec3(1.6f, 0.0f, 1.0f)); // Translate it down a bit so it's at the center of the scene
+		model_saturnus_ring = glm::rotate(model_saturnus_ring, 20.0f, glm::vec3(0.0f, 0.0f, 1.0f));
+		model_saturnus_ring = glm::scale(model_saturnus_ring, glm::vec3(0.2f, 0.2f, 0.2f));	// It's a bit too big for our scene, so scale it down
+		glUniformMatrix4fv(glGetUniformLocation(shader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model_saturnus_ring));
+		saturnus_ring.Draw(shader);
+
+
+		// URANUS
+		shader.Use();   // <-- Don't forget this one!
+		// Transformation matrices
+		glm::mat4 projection_uranus = glm::perspective(camera.Zoom, (float)screenWidth / (float)screenHeight, 0.1f, 100.0f);
+		glm::mat4 view_uranus = camera.GetViewMatrix();
+		glUniformMatrix4fv(glGetUniformLocation(shader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection_uranus));
+		glUniformMatrix4fv(glGetUniformLocation(shader.ID, "view"), 1, GL_FALSE, glm::value_ptr(view_uranus));
+		// Draw the loaded model
+		glm::mat4 model_uranus;
+		model_uranus = glm::translate(model_uranus, glm::vec3(2.3f, 0.0f, 1.0f)); // Translate it down a bit so it's at the center of the scene
+		model_uranus = glm::rotate(model_uranus, (GLfloat)glfwGetTime()*10.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+		model_uranus = glm::scale(model_uranus, glm::vec3(0.17f, 0.17f, 0.17f));	// It's a bit too big for our scene, so scale it down
+		glUniformMatrix4fv(glGetUniformLocation(shader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model_uranus));
+		uranus.Draw(shader);
+
+
+		// NEPTUNUS
+		shader.Use();   // <-- Don't forget this one!
+		// Transformation matrices
+		glm::mat4 projection_neptunus = glm::perspective(camera.Zoom, (float)screenWidth / (float)screenHeight, 0.1f, 100.0f);
+		glm::mat4 view_neptunus = camera.GetViewMatrix();
+		glUniformMatrix4fv(glGetUniformLocation(shader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection_neptunus));
+		glUniformMatrix4fv(glGetUniformLocation(shader.ID, "view"), 1, GL_FALSE, glm::value_ptr(view_neptunus));
+		// Draw the loaded model
+		glm::mat4 model_neptunus;
+		model_neptunus = glm::translate(model_neptunus, glm::vec3(3.0f, 0.0f, 1.0f)); // Translate it down a bit so it's at the center of the scene
+		model_neptunus = glm::rotate(model_neptunus, (GLfloat)glfwGetTime()*10.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+		model_neptunus = glm::scale(model_neptunus, glm::vec3(0.16f, 0.16f, 0.16f));	// It's a bit too big for our scene, so scale it down
+		glUniformMatrix4fv(glGetUniformLocation(shader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model_neptunus));
+		neptunus.Draw(shader);
+
+		
+
+		// Swap the buffers
+		glfwSwapBuffers(window);
+	}
+	glfwTerminate();
+	return 0;
+}
+
+#pragma region "User input"
+
+// Moves/alters the camera positions based on user input
+void Do_Movement()
+{
+	// Camera controls
+	if (keys[GLFW_KEY_W])
+	{
+		camera.ProcessKeyboard(FORWARD, deltaTime);
+		std::cout << "MAJU" << std::endl;
+	}
+
+	if (keys[GLFW_KEY_S])
+	{
+		camera.ProcessKeyboard(BACKWARD, deltaTime);
+		std::cout << "MUNDUR" << std::endl;
+	}
+
+	if (keys[GLFW_KEY_A])
+	{
+		camera.ProcessKeyboard(LEFT, deltaTime);
+		std::cout << "KIRI" << std::endl;
+	}
+
+	if (keys[GLFW_KEY_D])
+	{
+		camera.ProcessKeyboard(RIGHT, deltaTime);
+		std::cout << "KANAN" << std::endl;
+	}
+}
+
+// Is called whenever a key is pressed/released via GLFW
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
+{
+	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+	{
+		glfwSetWindowShouldClose(window, GL_TRUE);
+	}
+
+	if (key >= 0 && key < 1024)
+	{
+		if (action == GLFW_PRESS)
+		{
+			keys[key] = true;
+		}
+		else if (action == GLFW_RELEASE)
+		{
+			keys[key] = false;
+		}
+	}
+
+}
+
+#pragma endregion
